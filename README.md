@@ -1,6 +1,6 @@
 # 店务罗盘 · Moneki Operations Dashboard
 
-一套面向连锁餐饮运营的全栈经营看板：将 12,131 行带有重复、缺失、格式差异和脏外键的 POS 流水，清洗为可审计的 SQLite 数据集，再通过 FastAPI、React 看板和可核验 AI 问答提供一致的经营数字。
+一套面向连锁餐饮运营的全栈经营看板：将 12,131 行带有重复、缺失、格式差异和脏外键的 POS 流水，清洗为可审计的 SQLite 数据集，再通过 FastAPI、React 看板和可核验的 SSE 流式问答提供一致的经营数字。
 
 > 核心原则：AI 只理解问题和选择白名单工具；金额、订单数、客单价与排行全部由同一个确定性分析服务计算，回答附带工具参数、结果和数据批次。
 
@@ -25,7 +25,7 @@ docker compose up --build
 - **原始数据不可变**：先保存原始销售行，再生成规范化销售表和隔离表。
 - **脏数据不静默丢弃**：每个隔离行保留原始行号、原始字段和一个或多个原因码。
 - **AI 不执行自由 SQL**：只允许五个经过 schema 校验的分析工具；不支持的问题明确拒答。
-- **可回归验证**：29 项后端测试、7 项组件测试、桌面与手机双视口端到端测试覆盖核心链路。
+- **可回归验证**：后端、组件、类型、生产构建和桌面/手机双视口端到端测试覆盖核心链路，并由 GitHub Actions 重复执行。
 
 ## 已实现功能
 
@@ -45,6 +45,7 @@ docker compose up --build
 - “应用到看板”会同步日期、门店筛选并高亮对应商品
 - 默认 Mock planner；可选 OpenAI-compatible provider planner
 - 最近 8 条消息作为有界上下文，请求失败可原问题重试
+- `POST /api/v1/chat/stream` 使用真实 HTTP/SSE 分段传输；前端边接收边显示，支持停止和新问题取消旧请求
 - 对天气、库存等数据集外问题返回 `unsupported`，不生成伪造数字
 
 ### 数据质量账本
@@ -143,6 +144,8 @@ AI_MODE=mock
 
 Mock 只将有限的自然语言意图映射到工具参数；工具仍实时查询 SQLite，所以数据库变化时回答随之变化。
 
+默认公开部署也使用该模式：它是“数据库规则分析”，不是伪装成在线大模型的逐 token 输出。回答文本通过真实 SSE 网络事件分段到达，但每个经营数值仍来自同一套确定性查询。
+
 ### 可选：OpenAI-compatible provider
 
 ```dotenv
@@ -171,6 +174,7 @@ Provider 仍然只能选择下列工具，无法读 CSV、无法执行任意 SQL
 | GET | `/api/v1/dashboard` | 一次返回 KPI、趋势、商品与门店对比 |
 | GET | `/api/v1/data-quality` | 导入摘要、规则和问题计数 |
 | POST | `/api/v1/chat` | 有界上下文、回答、evidence 和看板动作 |
+| POST | `/api/v1/chat/stream` | SSE 流式状态、增量回答、最终 evidence 和看板动作 |
 | GET | `/docs` | FastAPI OpenAPI 交互文档 |
 
 示例：
@@ -180,7 +184,19 @@ curl "http://localhost:8000/api/v1/dashboard?start_date=2026-06-01&end_date=2026
 curl -X POST "http://localhost:8000/api/v1/chat" \
   -H "Content-Type: application/json" \
   -d '{"message":"牛肉poke 六月卖了多少钱？","history":[]}'
+
+curl -N -X POST "http://localhost:8000/api/v1/chat/stream" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"牛肉poke 六月卖了多少钱？","history":[]}'
 ```
+
+流式事件顺序为 `start → status → delta* → result → done`。请求校验错误在开始传输前返回标准 HTTP 4xx；传输开始后的异常使用 `error` 事件。
+
+## Render 部署
+
+仓库根目录的 `render.yaml` 定义单个免费 Docker Web Service。Render 从同一镜像构建 React、导入 CSV、启动 FastAPI，并通过 `/api/v1/health` 检查 SQLite 是否可用。平台注入的 `PORT` 会被容器启动命令和健康检查共同读取，本地未设置时回退到 `8000`。
+
+免费实例闲置后可能休眠，首次访问需要等待冷启动；业务数据由镜像内不可变 CSV 重建，因此不依赖持久磁盘。线上默认 `AI_MODE=mock`，不需要也不保存 API Key。
 
 ## 测试与质量门禁
 
@@ -221,7 +237,7 @@ docs/                   数据规则、设计规格、实施计划与截图
 
 - 本题数据量不需要微服务、外部数据仓库或向量数据库；这些会增加启动成本而不增加数字可信度。
 - 对无法确定业务含义的符号冲突不猜测为退款，统一隔离并保留审计信息。
-- 不将“流式打字动画”伪装成模型流式协议；界面提供明确 pending 状态，回答作为完整、可核验事务出现。
+- 使用真实 SSE 传输状态与回答分片，同时明确标识“数据库规则分析”；传输形态不会改变最终结构化 evidence，也不会被宣传为大模型 token 流。
 - 原始作业说明保留在 Git 历史首个提交中；本实现对应的设计与逐任务计划保留在 `docs/superpowers/`。
 
 ## 进一步阅读

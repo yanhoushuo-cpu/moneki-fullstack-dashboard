@@ -62,3 +62,9 @@ AI 生成的第一版前端用 `valid / raw`，测试样例中把已去除的完
 - 最终演示数字的确认：全部从数据库和自动化测试重新读取
 
 AI 加快了实现，但最终可信度来自显式规则、守恒检查、可审计数据和自动化验证，而不是模型自信程度。
+
+## 运行时 AI 与流式边界
+
+公开版本选择无付费 API 的确定性 Mock planner。它根据有限意图生成白名单工具参数，再由 SQLite 查询返回事实；项目保留 OpenAI-compatible provider 适配层，但没有密钥时不会调用外部模型，也不会把公开演示描述成真实大模型。
+
+`POST /api/v1/chat/stream` 是真实的 HTTP/SSE 流式接口：服务器发送 `start`、`status`、多个 `delta`、完整 `result` 和 `done`，浏览器通过 `ReadableStream` 与流式 `TextDecoder` 边接收边渲染。这里的 `delta` 是确定性回答的网络分片，不冒充模型 token。最终 evidence、看板动作和非流式 `/chat` 仍来自同一个 `ChatService` 结果。
