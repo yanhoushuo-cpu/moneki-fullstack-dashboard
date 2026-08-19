@@ -109,3 +109,28 @@ test('opens the data quality explanation without hiding the dashboard', async ()
   expect(screen.getByLabelText('移除重复：1')).toBeVisible();
   expect(screen.getByLabelText('净营业额：¥40.00')).toBeVisible();
 });
+
+test('shows a reconnect action instead of a permanent skeleton when metadata fails', async () => {
+  const user = userEvent.setup();
+  vi.mocked(api.getMeta).mockRejectedValueOnce(new Error('offline'));
+  renderPage();
+
+  expect(await screen.findByRole('heading', { name: '暂时无法连接数据' })).toBeVisible();
+  expect(screen.queryByLabelText('正在加载经营数据')).not.toBeInTheDocument();
+
+  await user.click(screen.getByRole('button', { name: '重新连接' }));
+  expect(await screen.findByLabelText('净营业额：¥40.00')).toBeVisible();
+});
+
+test('surfaces a data quality request error and lets the user retry it', async () => {
+  const user = userEvent.setup();
+  vi.mocked(api.getDataQuality).mockRejectedValueOnce(new Error('quality offline'));
+  renderPage();
+
+  expect(await screen.findByLabelText('净营业额：¥40.00')).toBeVisible();
+  expect(screen.getByRole('alert')).toHaveTextContent('数据质量信息暂时不可用');
+
+  await user.click(screen.getByRole('button', { name: '重试数据质量' }));
+  expect(await screen.findByRole('button', { name: '数据质量 100%' })).toBeEnabled();
+  expect(screen.queryByText('数据质量信息暂时不可用')).not.toBeInTheDocument();
+});

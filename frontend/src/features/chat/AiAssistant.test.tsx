@@ -35,6 +35,17 @@ beforeEach(() => {
   vi.mocked(api.ask).mockResolvedValue(response);
 });
 
+test('only offers standalone supported questions before any conversation', () => {
+  render(<AiAssistant onApplyDashboardAction={vi.fn()} />);
+
+  expect(screen.queryByRole('button', { name: '五月呢？' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '这批数据有哪些质量问题？' })).toBeVisible();
+  expect(screen.getByLabelText('向 AI 提问')).toHaveAttribute(
+    'placeholder',
+    '例如：牛肉poke 六月卖了多少钱？',
+  );
+});
+
 test('answers with inspectable evidence and applies the linked dashboard action', async () => {
   const user = userEvent.setup();
   const onApply = vi.fn();

@@ -9,7 +9,6 @@ import { SuggestionChips } from './SuggestionChips';
 
 const STARTER_QUESTIONS = [
   '牛肉poke 六月卖了多少钱？',
-  '五月呢？',
   '哪个品类的门店营业额最高？',
   '客单价最近是涨了还是跌了？',
   '这批数据有哪些质量问题？',
@@ -135,7 +134,7 @@ export function AiAssistant({ onApplyDashboardAction }: AiAssistantProps) {
             aria-label="向 AI 提问"
             rows={1}
             maxLength={500}
-            placeholder="例如：哪家店本月增长最快？"
+            placeholder="例如：牛肉poke 六月卖了多少钱？"
             value={input}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={(event) => {

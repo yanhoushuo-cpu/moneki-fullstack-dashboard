@@ -29,10 +29,10 @@ export function DashboardPage() {
     highlightedProduct,
   } = useDashboard();
 
-  if (metaQuery.isLoading || !metaQuery.data) return <LoadingDashboard />;
   if (metaQuery.isError) {
     return <div className="fatal-state"><h1>暂时无法连接数据</h1><p>请确认后端服务已启动。</p><button onClick={() => metaQuery.refetch()}>重新连接</button></div>;
   }
+  if (metaQuery.isLoading || !metaQuery.data) return <LoadingDashboard />;
 
   const dashboard = dashboardQuery.data;
   return (
@@ -54,6 +54,13 @@ export function DashboardPage() {
           <BadgeCheck size={19} />
         </button>
       </header>
+
+      {qualityQuery.isError && (
+        <div className="inline-error" role="alert">
+          <div><strong>数据质量信息暂时不可用</strong><p>经营看板不受影响，可以单独重试质量审计。</p></div>
+          <button type="button" aria-label="重试数据质量" onClick={() => qualityQuery.refetch()}>重试</button>
+        </div>
+      )}
 
       <FilterBar
         meta={metaQuery.data}

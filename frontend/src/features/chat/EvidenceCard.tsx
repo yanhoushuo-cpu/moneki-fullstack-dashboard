@@ -17,10 +17,15 @@ function labelFor(key: string) {
     .replace(/^./, (value) => value.toUpperCase());
 }
 
-function displayValue(key: string, value: unknown) {
-  if (key.endsWith('_cents') && typeof value === 'number') {
+function displayValue(key: string, value: unknown, evidence: Evidence) {
+  const comparisonMetric = evidence.result.metric;
+  const isComparisonMoney = evidence.tool === 'compare_periods'
+    && (key === 'current_value' || key === 'previous_value')
+    && (comparisonMetric === 'revenue' || comparisonMetric === 'average_order_value');
+  if ((key.endsWith('_cents') || isComparisonMoney) && typeof value === 'number') {
     return new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY' }).format(value / 100);
   }
+  if (key.endsWith('_percent') && typeof value === 'number') return `${value}%`;
   if (value === null) return '—';
   if (typeof value === 'object') return JSON.stringify(value, null, 2);
   return String(value);
@@ -36,7 +41,7 @@ export function EvidenceCard({ evidence, index }: { evidence: Evidence; index: n
       <div className="evidence-tool"><Braces size={15} /><div><strong>{TOOL_LABELS[evidence.tool] ?? evidence.tool}</strong><code>{evidence.tool}</code></div></div>
       <dl>
         {Object.entries(evidence.result).map(([key, value]) => (
-          <div key={key}><dt>{labelFor(key)}</dt><dd>{displayValue(key, value)}</dd></div>
+          <div key={key}><dt>{labelFor(key)}</dt><dd>{displayValue(key, value, evidence)}</dd></div>
         ))}
       </dl>
       <details>

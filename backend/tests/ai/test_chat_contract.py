@@ -84,4 +84,14 @@ def test_unsupported_question_returns_boundary_without_evidence(analytics_and_ch
     assert response.evidence == []
     assert response.dashboard_action is None
     assert len(response.suggestions) >= 3
+    assert "那五月呢？" not in response.suggestions
 
+
+def test_recommended_data_quality_question_uses_quality_tool(analytics_and_chat):
+    _, chat = analytics_and_chat
+
+    response = chat.answer(ChatRequest(message="这批数据有哪些质量问题？", history=[]))
+
+    assert response.status == "answered"
+    assert response.evidence[0].tool == "get_data_quality"
+    assert "原始数据" in response.answer

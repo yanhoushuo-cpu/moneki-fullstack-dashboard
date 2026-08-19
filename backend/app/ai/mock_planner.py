@@ -54,7 +54,7 @@ class MockPlanner:
         if not self.meta.date_min or not self.meta.date_max:
             return PlanDecision(unsupported_reason="当前数据库没有可查询的销售日期。")
 
-        if "数据质量" in current or "脏数据" in current:
+        if any(phrase in current for phrase in ("数据质量", "质量问题", "脏数据")):
             return PlanDecision(tool_call=ToolCall(name="get_data_quality", arguments={}))
 
         if "客单价" in current and any(word in current for word in ("涨", "跌", "趋势", "最近")):
