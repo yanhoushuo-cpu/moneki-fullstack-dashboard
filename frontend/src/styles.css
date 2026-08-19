@@ -648,6 +648,22 @@ button {
   background: #ffefc7;
 }
 
+.answer-badge.streaming {
+  color: #76502d;
+  background: #f4e8d8;
+}
+
+.stop-stream-button {
+  margin-left: 7px;
+  padding: 3px 7px;
+  border: 1px solid #d8c4b1;
+  border-radius: 999px;
+  color: #76502d;
+  background: white;
+  font-size: 0.57rem;
+  font-weight: 800;
+}
+
 .evidence-disclosure {
   margin-top: 9px;
 }

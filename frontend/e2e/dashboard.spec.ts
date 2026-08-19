@@ -15,7 +15,12 @@ test('dashboard filters, quality evidence, and AI answer work together', async (
   await expect(page.getByText('安全修复')).toBeVisible();
   await page.getByRole('button', { name: '关闭', exact: true }).click();
 
+  const streamResponse = page.waitForResponse((response) => (
+    response.url().endsWith('/api/v1/chat/stream')
+    && response.request().method() === 'POST'
+  ));
   await page.getByRole('button', { name: '牛肉poke 六月卖了多少钱？' }).click();
+  await expect.poll(async () => (await streamResponse).headers()['content-type']).toContain('text/event-stream');
   await expect(page.getByText(/牛肉poke在 2026-06-01 至 2026-06-30/)).toBeVisible();
   await page.getByText('1 条可核验证据').click();
   await expect(page.getByText('get_revenue')).toBeVisible();

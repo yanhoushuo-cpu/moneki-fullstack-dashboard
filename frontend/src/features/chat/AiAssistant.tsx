@@ -27,6 +27,8 @@ export function AiAssistant({ onApplyDashboardAction }: AiAssistantProps) {
   const [input, setInput] = useState('');
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
+  const [pendingAnswer, setPendingAnswer] = useState('');
+  const [pendingStatus, setPendingStatus] = useState('正在理解问题…');
   const [lastQuestion, setLastQuestion] = useState('');
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
@@ -43,29 +45,46 @@ export function AiAssistant({ onApplyDashboardAction }: AiAssistantProps) {
   useEffect(() => () => controllerRef.current?.abort(), []);
   useEffect(() => {
     if (streamRef.current) streamRef.current.scrollTop = streamRef.current.scrollHeight;
-  }, [exchanges, pendingQuestion, error]);
+  }, [exchanges, pendingQuestion, pendingAnswer, error]);
 
   async function ask(questionValue: string) {
     const question = questionValue.trim();
-    if (!question || pendingQuestion) return;
+    if (!question) return;
 
     const controller = new AbortController();
-    controllerRef.current?.abort();
+    const previousController = controllerRef.current;
     controllerRef.current = controller;
+    previousController?.abort();
     setInput('');
     setError(null);
     setLastQuestion(question);
     setPendingQuestion(question);
+    setPendingAnswer('');
+    setPendingStatus('正在理解问题…');
 
     try {
-      const response = await api.ask(question, history, controller.signal);
+      const response = await api.askStream(question, history, {
+        signal: controller.signal,
+        onEvent: (event) => {
+          if (controllerRef.current !== controller) return;
+          if (event.type === 'status') setPendingStatus(event.message);
+          if (event.type === 'delta') setPendingAnswer((current) => current + event.text);
+        },
+      });
+      if (controllerRef.current !== controller) return;
       setExchanges((current) => [...current, { question, response }].slice(-4));
     } catch (requestError) {
-      if (requestError instanceof DOMException && requestError.name === 'AbortError') return;
+      if (controllerRef.current !== controller) return;
       setInput(question);
+      if (requestError instanceof DOMException && requestError.name === 'AbortError') return;
       setError('暂时无法完成分析，请检查服务连接后重试。');
     } finally {
-      if (controllerRef.current === controller) setPendingQuestion(null);
+      if (controllerRef.current === controller) {
+        controllerRef.current = null;
+        setPendingQuestion(null);
+        setPendingAnswer('');
+        setPendingStatus('正在理解问题…');
+      }
     }
   }
 
@@ -117,7 +136,20 @@ export function AiAssistant({ onApplyDashboardAction }: AiAssistantProps) {
         {pendingQuestion && (
           <div className="exchange">
             <ChatMessage role="user">{pendingQuestion}</ChatMessage>
-            <ChatMessage role="assistant"><span className="thinking-dots" aria-label="正在分析"><i /><i /><i /></span></ChatMessage>
+            <ChatMessage role="assistant">
+              {pendingAnswer
+                ? <p>{pendingAnswer}</p>
+                : <span className="thinking-dots" aria-label={pendingStatus}><i /><i /><i /></span>}
+              <span className="answer-badge streaming">流式传输 · 数据库规则分析</span>
+              <button
+                aria-label="停止生成"
+                className="stop-stream-button"
+                type="button"
+                onClick={() => controllerRef.current?.abort()}
+              >
+                停止
+              </button>
+            </ChatMessage>
           </div>
         )}
         {error && (
@@ -126,7 +158,7 @@ export function AiAssistant({ onApplyDashboardAction }: AiAssistantProps) {
       </div>
 
       <div className="assistant-controls">
-        <SuggestionChips suggestions={latestSuggestions.slice(0, 5)} disabled={Boolean(pendingQuestion)} onSelect={ask} />
+        <SuggestionChips suggestions={latestSuggestions.slice(0, 5)} onSelect={ask} />
         <form className="chat-composer" onSubmit={(event) => { event.preventDefault(); void ask(input); }}>
           <label className="sr-only" htmlFor="assistant-question">向 AI 提问</label>
           <textarea
@@ -144,7 +176,7 @@ export function AiAssistant({ onApplyDashboardAction }: AiAssistantProps) {
               }
             }}
           />
-          <button type="submit" aria-label="发送问题" disabled={!input.trim() || Boolean(pendingQuestion)}><ArrowUp size={18} /></button>
+          <button type="submit" aria-label="发送问题" disabled={!input.trim()}><ArrowUp size={18} /></button>
         </form>
         <small className="assistant-note">AI 只负责理解问题，所有数字由确定性分析服务计算。</small>
       </div>
