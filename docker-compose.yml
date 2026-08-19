@@ -1,0 +1,16 @@
+services:
+  dashboard:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      AI_MODE: ${AI_MODE:-mock}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
+      AI_MODEL: ${AI_MODEL:-gpt-5.4-mini}
+    volumes:
+      - moneki-data:/app/var
+    restart: unless-stopped
+
+volumes:
+  moneki-data:

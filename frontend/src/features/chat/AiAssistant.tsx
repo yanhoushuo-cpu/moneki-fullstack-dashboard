@@ -10,8 +10,8 @@ import { SuggestionChips } from './SuggestionChips';
 const STARTER_QUESTIONS = [
   '牛肉poke 六月卖了多少钱？',
   '五月呢？',
-  '销售额最高的 5 家店',
-  '端午节前后销售对比',
+  '哪个品类的门店营业额最高？',
+  '客单价最近是涨了还是跌了？',
   '这批数据有哪些质量问题？',
 ];
 
