@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: moneki-fullstack-dashboard
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: AI_MODE
+        value: mock
