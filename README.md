@@ -2,6 +2,10 @@
 
 一套面向连锁餐饮运营的全栈经营看板：将 12,131 行带有重复、缺失、格式差异和脏外键的 POS 流水，清洗为可审计的 SQLite 数据集，再通过 FastAPI、React 看板和可核验的 SSE 流式问答提供一致的经营数字。
 
+**在线体验：** [https://moneki-fullstack-dashboard.onrender.com](https://moneki-fullstack-dashboard.onrender.com)
+
+> Render 免费实例在一段时间无人访问后会休眠，首次打开可能需要约 50 秒唤醒。
+
 > 核心原则：AI 只理解问题和选择白名单工具；金额、订单数、客单价与排行全部由同一个确定性分析服务计算，回答附带工具参数、结果和数据批次。
 
 ![店务罗盘桌面端总览](docs/screenshots/dashboard.png)
