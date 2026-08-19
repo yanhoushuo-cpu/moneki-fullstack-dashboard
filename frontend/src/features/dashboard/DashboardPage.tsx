@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BadgeCheck, CircleDollarSign, ReceiptText, Sparkles, UsersRound } from 'lucide-react';
 
 import { formatMoney, formatNumber } from '../../lib/format';
+import { AiAssistant } from '../chat/AiAssistant';
 import { DataQualityDrawer } from './DataQualityDrawer';
 import { FilterBar } from './FilterBar';
 import { KpiCard } from './KpiCard';
@@ -24,6 +25,7 @@ export function DashboardPage() {
     draftFilters,
     setDraftFilters,
     applyFilters,
+    applyDashboardAction,
     highlightedProduct,
   } = useDashboard();
 
@@ -76,7 +78,10 @@ export function DashboardPage() {
             <KpiCard label="成交订单" value={formatNumber(dashboard.summary.order_count)} change={dashboard.summary.order_change_percent} helper="唯一订单数" icon={ReceiptText} tone="green" />
             <KpiCard label="平均客单价" value={formatMoney(dashboard.summary.average_order_value)} change={dashboard.summary.average_order_value_change_percent} helper="较上一周期" icon={UsersRound} tone="sand" />
           </section>
-          <RevenueChart points={dashboard.daily} />
+          <section className="insight-grid">
+            <RevenueChart points={dashboard.daily} />
+            <AiAssistant onApplyDashboardAction={applyDashboardAction} />
+          </section>
           <section className="analysis-grid">
             <TopProducts products={dashboard.top_products} highlightedProduct={highlightedProduct} />
             <StoreComparison stores={dashboard.store_comparison} />
@@ -90,4 +95,3 @@ export function DashboardPage() {
     </main>
   );
 }
-
