@@ -7,8 +7,10 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from app.ai.mock_planner import MockPlanner
+from app.ai.service import ChatService
 from app.analytics.service import AnalyticsService
-from app.api.dependencies import get_analytics_service
+from app.api.dependencies import get_analytics_service, get_chat_service
 from app.db.database import create_engine_for_path
 from app.db.schema import IngestionRun, Product, Sale, Store, create_schema
 from app.main import app
@@ -53,9 +55,11 @@ def api_client(tmp_path):
         )
         session.commit()
 
-    app.dependency_overrides[get_analytics_service] = lambda: AnalyticsService(engine)
+    analytics = AnalyticsService(engine)
+    chat = ChatService(analytics=analytics, planner=MockPlanner(analytics.get_meta()))
+    app.dependency_overrides[get_analytics_service] = lambda: analytics
+    app.dependency_overrides[get_chat_service] = lambda: chat
     with TestClient(app) as client:
         yield client
     app.dependency_overrides.clear()
     engine.dispose()
-

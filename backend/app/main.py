@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes_chat import router as chat_router
 from app.api.routes_dashboard import router as dashboard_router
 from app.api.routes_meta import router as meta_router
 from app.api.routes_quality import router as quality_router
@@ -23,6 +24,7 @@ def create_app() -> FastAPI:
     application.include_router(meta_router, prefix="/api/v1")
     application.include_router(dashboard_router, prefix="/api/v1")
     application.include_router(quality_router, prefix="/api/v1")
+    application.include_router(chat_router, prefix="/api/v1")
     return application
 
 

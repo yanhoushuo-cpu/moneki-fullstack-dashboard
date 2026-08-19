@@ -16,6 +16,7 @@ from app.analytics.models import (
     DataQualityResult,
     MetaResult,
     MetricSummary,
+    ProductOption,
     RevenueResult,
     StoreComparison,
     StoreOption,
@@ -484,6 +485,14 @@ class AnalyticsService:
                     """
                 )
             ).mappings().all()
+            products = connection.execute(
+                text(
+                    """
+                    SELECT product_id, product_name, product_category
+                    FROM products ORDER BY product_id
+                    """
+                )
+            ).mappings().all()
             run_id = connection.execute(
                 text("SELECT id FROM ingestion_runs ORDER BY id DESC LIMIT 1")
             ).scalar_one()
@@ -498,6 +507,14 @@ class AnalyticsService:
                     district=str(row["district"]),
                 )
                 for row in stores
+            ],
+            products=[
+                ProductOption(
+                    product_id=str(row["product_id"]),
+                    product_name=str(row["product_name"]),
+                    product_category=str(row["product_category"]),
+                )
+                for row in products
             ],
             ingestion_run_id=int(run_id),
         )

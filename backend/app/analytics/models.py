@@ -147,9 +147,16 @@ class StoreOption:
 
 
 @dataclass(frozen=True)
+class ProductOption:
+    product_id: str
+    product_name: str
+    product_category: str
+
+
+@dataclass(frozen=True)
 class MetaResult:
     date_min: str | None
     date_max: str | None
     stores: list[StoreOption]
+    products: list[ProductOption]
     ingestion_run_id: int
-
