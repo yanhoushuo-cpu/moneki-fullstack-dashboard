@@ -137,3 +137,10 @@ export interface ChatResponse {
   suggestions: string[];
 }
 
+export type ChatStreamEvent =
+  | { type: 'start' }
+  | { type: 'status'; message: string }
+  | { type: 'delta'; text: string }
+  | { type: 'result'; response: ChatResponse }
+  | { type: 'done' }
+  | { type: 'error'; message: string };

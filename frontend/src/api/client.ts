@@ -5,6 +5,7 @@ import type {
   DataQualityResponse,
   MetaResponse,
 } from './types';
+import { streamChat, type ChatStreamOptions } from './chatStream';
 
 export class ApiError extends Error {
   constructor(
@@ -51,5 +52,6 @@ export const api = {
       body: JSON.stringify({ message, history: history.slice(-8) }),
       signal,
     }),
+  askStream: (message: string, history: ChatMessage[], options: ChatStreamOptions) =>
+    streamChat(message, history.slice(-8), options),
 };
-
