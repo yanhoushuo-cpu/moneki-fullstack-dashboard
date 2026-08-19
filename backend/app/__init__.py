@@ -1,0 +1,2 @@
+"""Moneki analytics application."""
+
